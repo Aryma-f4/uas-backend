@@ -1,5 +1,7 @@
 # Student Achievement Reporting System - Backend
 
+Repository Link : https://github.com/Aryma-f4/uas-backend
+
 Complete backend untuk student achievement reporting system terbuat dengan Go Fiber, PostgreSQL, dan MongoDB.
 
 ## Project Structure
