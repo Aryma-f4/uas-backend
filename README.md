@@ -6,7 +6,7 @@ Complete backend untuk student achievement reporting system terbuat dengan Go Fi
 
 ## Project Structure
 
-\`\`\`
+```
 ├── main.go                 # Application entry point
 ├── config.go              # Database configurations
 ├── migrations.go           # Database migrations
@@ -34,7 +34,7 @@ Complete backend untuk student achievement reporting system terbuat dengan Go Fi
 │   ├── lecturer.go
 │   └── report.go
 └── go.mod                 # Go module file
-\`\`\`
+```
 
 ## Setup & Installation
 
@@ -44,21 +44,21 @@ Complete backend untuk student achievement reporting system terbuat dengan Go Fi
    - MongoDB 5+
 
 2. **Environment Setup**
-   \`\`\`bash
+   ```bash
    cp .env.example .env
    # Edit .env with your database credentials
-   \`\`\`
+   ```
 
 3. **Install Dependencies**
-   \`\`\`bash
+   ```bash
    go mod download
    go mod tidy
-   \`\`\`
+   ```
 
 4. **Run Application**
-   \`\`\`bash
+   ```bash
    go run main.go
-   \`\`\`
+   ```
 
 ## Database Setup
 
