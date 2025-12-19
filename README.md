@@ -1,8 +1,6 @@
 # Student Achievement Reporting System - Backend
 
-Repository Link : https://github.com/Aryma-f4/uas-backend
-
-Complete backend untuk student achievement reporting system terbuat dengan Go Fiber, PostgreSQL, dan MongoDB.
+Complete backend for student achievement reporting system built with Go Fiber, PostgreSQL, and MongoDB.
 
 ## Project Structure
 
@@ -11,9 +9,9 @@ Complete backend untuk student achievement reporting system terbuat dengan Go Fi
 ├── config.go              # Database configurations
 ├── migrations.go           # Database migrations
 ├── models/
-│   ├── user.go            # User dan Auth models
+│   ├── user.go            # User and Auth models
 │   ├── achievement.go      # Achievement models
-│   └── student.go          # Student dan Lecturer models
+│   └── student.go          # Student and Lecturer models
 ├── repository/            # Data access layer
 │   ├── user_repository.go
 │   ├── achievement_repository.go
@@ -25,7 +23,7 @@ Complete backend untuk student achievement reporting system terbuat dengan Go Fi
 │   ├── user_service.go
 │   └── student_service.go
 ├── middleware/
-│   └── auth.go            # Authentication dan RBAC middleware
+│   └── auth.go            # Authentication and RBAC middleware
 ├── routes/                # API route handlers
 │   ├── auth.go
 │   ├── user.go
@@ -63,25 +61,25 @@ Complete backend untuk student achievement reporting system terbuat dengan Go Fi
 ## Database Setup
 
 ### PostgreSQL
-- Buat database: `createdb achievement_db`
-- Migraasi otomatis ketika startup
+- Create database: `createdb achievement_db`
+- Migrations run automatically on startup
 
 ### MongoDB
 - Default: `mongodb://localhost:27017`
 - Database: `achievement_db`
-- Collections created secara otomatis
+- Collections created automatically
 
 ## API Documentation
 
-Swagger documentation ada di  `/swagger/index.html` Setelah Application running.
+See Swagger documentation at `/swagger/index.html` after running the application.
 
 ## Architecture
 
 ### Clean Architecture Pattern
-- **Models**: Data structures dan interfaces
+- **Models**: Data structures and interfaces
 - **Repository**: Data access layer abstraction
-- **Service**: Business logic dan use cases
-- **Routes**: HTTP handlers dan request processing
+- **Service**: Business logic and use cases
+- **Routes**: HTTP handlers and request processing
 - **Middleware**: Cross-cutting concerns (auth, RBAC)
 
 ### Database Design
@@ -117,8 +115,8 @@ Swagger documentation ada di  `/swagger/index.html` Setelah Application running.
 - `GET /api/v1/achievements/:id` - Get achievement
 - `POST /api/v1/achievements` - Create achievement
 - `POST /api/v1/achievements/:id/submit` - Submit for verification
-- `POST /api/v1/achievements/:id/verify` - Verifikasi achievement
-- `POST /api/v1/achievements/:id/reject` - Tolak achievement
+- `POST /api/v1/achievements/:id/verify` - Verify achievement
+- `POST /api/v1/achievements/:id/reject` - Reject achievement
 - `DELETE /api/v1/achievements/:id` - Delete achievement
 
 ### Students

@@ -1,14 +1,38 @@
-FROM golang:1.21-alpine
+# Build stage
+# UBAH DARI 1.21 KE 1.25 AGAR SESUAI DENGAN VERSI GO DI LAPTOP ANDA
+FROM golang:1.25-alpine AS builder 
 
 WORKDIR /app
 
+# Install dependencies
+RUN apk add --no-cache git
+
+# Copy go mod files
 COPY go.mod go.sum ./
 RUN go mod download
 
+# Copy source code
 COPY . .
 
-RUN go build -o achievement-backend .
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
 
+# Final stage
+FROM alpine:latest
+
+WORKDIR /app
+
+# Install ca-certificates for HTTPS
+RUN apk --no-cache add ca-certificates tzdata
+
+# Copy binary from builder
+COPY --from=builder /app/main .
+
+# Create uploads directory
+RUN mkdir -p /app/public/uploads/achievements
+
+# Expose port
 EXPOSE 3000
 
-CMD ["./achievement-backend"]
+# Run the application
+CMD ["./main"]

@@ -3,176 +3,146 @@ package middleware
 import (
 	"strings"
 
-	"github.com/airlangga/achievement-reporting/helpers"
-	"github.com/airlangga/achievement-reporting/repository"
-	"github.com/airlangga/achievement-reporting/service"
+	"github.com/Aryma-f4/uas-backend/app/repository"
+	"github.com/Aryma-f4/uas-backend/app/usecase"
+	"github.com/Aryma-f4/uas-backend/utils"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 )
 
-type AuthContext struct {
-	UserID uuid.UUID
-	RoleID uuid.UUID
-}
-
-func AuthMiddleware(authService *service.AuthService) fiber.Handler {
+func AuthMiddleware(authUsecase *usecase.AuthUsecase) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		authHeader := c.Get("Authorization")
 		if authHeader == "" {
-			return helpers.ErrorResponse(c, 401, "unauthorized", "missing authorization header")
+			return utils.UnauthorizedResponse(c, "Missing authorization header")
 		}
 
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			return helpers.ErrorResponse(c, 401, "unauthorized", "invalid authorization format")
+			return utils.UnauthorizedResponse(c, "Invalid authorization format")
 		}
 
-		userID, roleID, err := authService.ValidateToken(parts[1])
+		userID, roleID, err := authUsecase.ValidateToken(parts[1])
 		if err != nil {
-			return helpers.ErrorResponse(c, 401, "unauthorized", "invalid token")
+			return utils.UnauthorizedResponse(c, "Invalid or expired token")
 		}
 
-		c.Locals("userID", userID)
-		c.Locals("roleID", roleID)
+		c.Locals("user_id", userID.String())
+		c.Locals("role_id", roleID.String())
 
 		return c.Next()
 	}
 }
 
-// RequireRole middleware checks if user has specific role
-func RequireRole(userRepo *repository.UserRepository, requiredRoles ...string) fiber.Handler {
+func RequireRole(userRepo *repository.UserRepository, allowedRoles ...string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		roleID, ok := c.Locals("roleID").(uuid.UUID)
-		if !ok {
-			return helpers.ErrorResponse(c, 401, "unauthorized", "invalid role context")
+		roleIDStr := c.Locals("role_id")
+		if roleIDStr == nil {
+			return utils.UnauthorizedResponse(c, "Role not found in context")
 		}
 
-		role, err := userRepo.GetRole(c.Context(), roleID)
-		if err != nil || role == nil {
-			return helpers.ErrorResponse(c, 403, "forbidden", "user role not found")
+		roleID, err := uuid.Parse(roleIDStr.(string))
+		if err != nil {
+			return utils.UnauthorizedResponse(c, "Invalid role ID")
 		}
 
-		hasRole := false
-		for _, required := range requiredRoles {
-			if role.Name == required {
-				hasRole = true
+		// Get user's role name
+		roles, err := userRepo.GetRoles(c.Context())
+		if err != nil {
+			return utils.InternalServerErrorResponse(c, "Failed to fetch roles")
+		}
+
+		var userRoleName string
+		for _, role := range roles {
+			if role.ID == roleID {
+				userRoleName = role.Name
 				break
 			}
 		}
 
-		if !hasRole {
-			return helpers.ErrorResponse(c, 403, "forbidden", "insufficient role permissions")
+		if userRoleName == "" {
+			return utils.ForbiddenResponse(c, "User role not found")
 		}
 
-		c.Locals("role", role.Name)
+		// Check if user's role is in allowed roles
+		allowed := false
+		for _, allowedRole := range allowedRoles {
+			if userRoleName == allowedRole {
+				allowed = true
+				break
+			}
+		}
+
+		if !allowed {
+			return utils.ForbiddenResponse(c, "Insufficient role permissions")
+		}
+
+		c.Locals("role_name", userRoleName)
 		return c.Next()
 	}
 }
 
-// RequirePermission middleware checks if user has specific permission
-func RequirePermission(userRepo *repository.UserRepository, requiredPermission string) fiber.Handler {
+func RequirePermission(userRepo *repository.UserRepository, permission string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		userID, ok := c.Locals("userID").(uuid.UUID)
-		if !ok {
-			return helpers.ErrorResponse(c, 401, "unauthorized", "invalid user context")
+		roleIDStr := c.Locals("role_id")
+		if roleIDStr == nil {
+			return utils.UnauthorizedResponse(c, "Role not found in context")
 		}
 
-		permissions, err := userRepo.GetPermissions(c.Context(), userID)
+		roleID, err := uuid.Parse(roleIDStr.(string))
 		if err != nil {
-			return helpers.ErrorResponse(c, 403, "forbidden", "unable to fetch permissions")
+			return utils.UnauthorizedResponse(c, "Invalid role ID")
 		}
 
-		hasPermission := false
-		for _, perm := range permissions {
-			if perm == requiredPermission {
-				hasPermission = true
-				break
-			}
+		hasPermission, err := userRepo.CheckPermission(c.Context(), roleID, permission)
+		if err != nil {
+			return utils.InternalServerErrorResponse(c, "Failed to check permissions")
 		}
 
 		if !hasPermission {
-			return helpers.ErrorResponse(c, 403, "forbidden", "insufficient permissions for this action")
+			return utils.ForbiddenResponse(c, "Insufficient permissions")
 		}
 
-		c.Locals("permissions", permissions)
-		return c.Next()
-	}
-}
-
-// RequireAnyPermission checks if user has any of the required permissions
-func RequireAnyPermission(userRepo *repository.UserRepository, requiredPermissions ...string) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		userID, ok := c.Locals("userID").(uuid.UUID)
-		if !ok {
-			return helpers.ErrorResponse(c, 401, "unauthorized", "invalid user context")
-		}
-
-		permissions, err := userRepo.GetPermissions(c.Context(), userID)
-		if err != nil {
-			return helpers.ErrorResponse(c, 403, "forbidden", "unable to fetch permissions")
-		}
-
-		hasPermission := false
-		for _, required := range requiredPermissions {
-			for _, perm := range permissions {
-				if perm == required {
-					hasPermission = true
-					break
-				}
-			}
-			if hasPermission {
+		// Also get and set role name
+		roles, _ := userRepo.GetRoles(c.Context())
+		for _, role := range roles {
+			if role.ID == roleID {
+				c.Locals("role_name", role.Name)
 				break
 			}
 		}
 
-		if !hasPermission {
-			return helpers.ErrorResponse(c, 403, "forbidden", "insufficient permissions for this action")
-		}
-
-		c.Locals("permissions", permissions)
 		return c.Next()
 	}
 }
 
-// RequireAllPermissions checks if user has all required permissions
-func RequireAllPermissions(userRepo *repository.UserRepository, requiredPermissions ...string) fiber.Handler {
+func RequireAnyPermission(userRepo *repository.UserRepository, permissions ...string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		userID, ok := c.Locals("userID").(uuid.UUID)
-		if !ok {
-			return helpers.ErrorResponse(c, 401, "unauthorized", "invalid user context")
+		roleIDStr := c.Locals("role_id")
+		if roleIDStr == nil {
+			return utils.UnauthorizedResponse(c, "Role not found in context")
 		}
 
-		permissions, err := userRepo.GetPermissions(c.Context(), userID)
+		roleID, err := uuid.Parse(roleIDStr.(string))
 		if err != nil {
-			return helpers.ErrorResponse(c, 403, "forbidden", "unable to fetch permissions")
+			return utils.UnauthorizedResponse(c, "Invalid role ID")
 		}
 
-		for _, required := range requiredPermissions {
-			found := false
-			for _, perm := range permissions {
-				if perm == required {
-					found = true
-					break
+		for _, permission := range permissions {
+			hasPermission, err := userRepo.CheckPermission(c.Context(), roleID, permission)
+			if err == nil && hasPermission {
+				// Also get and set role name
+				roles, _ := userRepo.GetRoles(c.Context())
+				for _, role := range roles {
+					if role.ID == roleID {
+						c.Locals("role_name", role.Name)
+						break
+					}
 				}
-			}
-			if !found {
-				return helpers.ErrorResponse(c, 403, "forbidden", "insufficient permissions for this action")
+				return c.Next()
 			}
 		}
 
-		c.Locals("permissions", permissions)
-		return c.Next()
-	}
-}
-
-// RecoveryMiddleware recovers from panics
-func RecoveryMiddleware() fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		defer func() {
-			if err := recover(); err != nil {
-				helpers.ErrorResponse(c, 500, "internal server error", "unexpected error occurred")
-			}
-		}()
-		return c.Next()
+		return utils.ForbiddenResponse(c, "Insufficient permissions")
 	}
 }

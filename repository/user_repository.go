@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/airlangga/achievement-reporting/models"
+	"github.com/Aryma-f4/uas-backend/models"
 	"github.com/google/uuid"
 )
 

@@ -1,0 +1,976 @@
+---
+swagger: '2.0'
+info:
+  title: Student Achievement Reporting System API
+  description: Complete REST API for managing student achievements with role-based
+    access control
+  version: 1.0.0
+  contact:
+    name: Backend Support
+    email: support@achievement-system.com
+  license:
+    name: MIT
+host: localhost:3000
+basePath: "/api/v1"
+schemes:
+- http
+- https
+consumes:
+- application/json
+produces:
+- application/json
+securityDefinitions:
+  bearerAuth:
+    type: apiKey
+    name: Authorization
+    in: header
+    description: JWT Bearer token for authentication
+definitions:
+  LoginRequest:
+    type: object
+    required:
+    - username
+    - password
+    properties:
+      username:
+        type: string
+        example: mahasiswa123
+      password:
+        type: string
+        example: SecurePass123!
+  User:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uuid
+        example: 550e8400-e29b-41d4-a716-446655440000
+      username:
+        type: string
+        example: mahasiswa123
+      email:
+        type: string
+        example: mahasiswa@university.edu
+      full_name:
+        type: string
+        example: John Doe
+      role:
+        type: string
+        enum:
+        - Admin
+        - Mahasiswa
+        - Dosen Wali
+        example: Mahasiswa
+      permissions:
+        type: array
+        items:
+          type: string
+        example:
+        - achievement:create
+        - achievement:read
+        - achievement:update
+      is_active:
+        type: boolean
+        example: true
+      created_at:
+        type: string
+        format: date-time
+      updated_at:
+        type: string
+        format: date-time
+  CreateUserRequest:
+    type: object
+    required:
+    - username
+    - email
+    - password
+    - full_name
+    - role_id
+    properties:
+      username:
+        type: string
+        example: newuser123
+      email:
+        type: string
+        example: newuser@university.edu
+      password:
+        type: string
+        example: SecurePass123!
+      full_name:
+        type: string
+        example: New User
+      role_id:
+        type: string
+        format: uuid
+  Achievement:
+    type: object
+    properties:
+      _id:
+        type: string
+        example: 507f1f77bcf86cd799439011
+      student_id:
+        type: string
+        format: uuid
+      achievement_type:
+        type: string
+        enum:
+        - academic
+        - competition
+        - organization
+        - publication
+        - certification
+        - other
+        example: competition
+      title:
+        type: string
+        example: Juara 1 Hackathon Nasional 2025
+      description:
+        type: string
+        example: Memenangkan kompetisi hackathon tingkat nasional
+      details:
+        type: object
+        example:
+          competition_name: Indonesia Tech Innovation Challenge
+          competition_level: national
+          rank: 1
+          medal_type: gold
+          event_date: '2025-10-15'
+          location: Jakarta
+      tags:
+        type: array
+        items:
+          type: string
+        example:
+        - teknologi
+        - hackathon
+        - programming
+      points:
+        type: integer
+        example: 50
+      created_at:
+        type: string
+        format: date-time
+      updated_at:
+        type: string
+        format: date-time
+  CreateAchievementRequest:
+    type: object
+    required:
+    - achievement_type
+    - title
+    properties:
+      achievement_type:
+        type: string
+        enum:
+        - academic
+        - competition
+        - organization
+        - publication
+        - certification
+        - other
+        example: competition
+      title:
+        type: string
+        example: Juara 1 Hackathon Nasional 2025
+      description:
+        type: string
+        example: Memenangkan kompetisi hackathon tingkat nasional
+      details:
+        type: object
+        example:
+          competition_name: Indonesia Tech Innovation Challenge
+          competition_level: national
+          rank: 1
+          medal_type: gold
+          event_date: '2025-10-15'
+          location: Jakarta
+      tags:
+        type: array
+        items:
+          type: string
+      points:
+        type: integer
+  AchievementReference:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uuid
+      student_id:
+        type: string
+        format: uuid
+      mongo_achievement_id:
+        type: string
+      status:
+        type: string
+        enum:
+        - draft
+        - submitted
+        - verified
+        - rejected
+        example: draft
+      submitted_at:
+        type: string
+        format: date-time
+      verified_at:
+        type: string
+        format: date-time
+      verified_by:
+        type: string
+        format: uuid
+      rejection_note:
+        type: string
+      created_at:
+        type: string
+        format: date-time
+      updated_at:
+        type: string
+        format: date-time
+  Student:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uuid
+      user_id:
+        type: string
+        format: uuid
+      student_id:
+        type: string
+        example: '2024001'
+      program_study:
+        type: string
+        example: Teknik Informatika
+      academic_year:
+        type: string
+        example: 2024/2025
+      advisor_id:
+        type: string
+        format: uuid
+      created_at:
+        type: string
+        format: date-time
+  Lecturer:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uuid
+      user_id:
+        type: string
+        format: uuid
+      lecturer_id:
+        type: string
+        example: L001
+      department:
+        type: string
+        example: Teknik Informatika
+      created_at:
+        type: string
+        format: date-time
+  SuccessResponse:
+    type: object
+    properties:
+      status:
+        type: string
+        example: success
+      message:
+        type: string
+      data:
+        type: object
+  ErrorResponse:
+    type: object
+    properties:
+      status:
+        type: string
+        example: error
+      message:
+        type: string
+      details:
+        type: string
+  PaginationResponse:
+    type: object
+    properties:
+      status:
+        type: string
+        example: success
+      data:
+        type: array
+      pagination:
+        type: object
+        properties:
+          total:
+            type: integer
+          limit:
+            type: integer
+          offset:
+            type: integer
+paths:
+  "/auth/login":
+    post:
+      summary: User Login
+      description: Authenticate user and receive JWT token
+      tags:
+      - Authentication
+      parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          "$ref": "#/definitions/LoginRequest"
+      responses:
+        '200':
+          description: Login successful
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                example: success
+              message:
+                type: string
+              data:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  refresh_token:
+                    type: string
+                  user:
+                    "$ref": "#/definitions/User"
+        '400':
+          description: Bad request
+          schema:
+            "$ref": "#/definitions/ErrorResponse"
+        '401':
+          description: Invalid credentials
+          schema:
+            "$ref": "#/definitions/ErrorResponse"
+        '422':
+          description: Validation error
+          schema:
+            "$ref": "#/definitions/ErrorResponse"
+  "/auth/refresh":
+    post:
+      summary: Refresh JWT Token
+      description: Get a new access token using refresh token
+      tags:
+      - Authentication
+      parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+          - refresh_token
+          properties:
+            refresh_token:
+              type: string
+      responses:
+        '200':
+          description: Token refreshed
+          schema:
+            "$ref": "#/definitions/SuccessResponse"
+        '401':
+          description: Invalid refresh token
+          schema:
+            "$ref": "#/definitions/ErrorResponse"
+  "/auth/profile":
+    get:
+      summary: Get Current User Profile
+      description: Retrieve authenticated user's profile information
+      tags:
+      - Authentication
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: User profile retrieved
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+              message:
+                type: string
+              data:
+                "$ref": "#/definitions/User"
+        '401':
+          description: Unauthorized
+          schema:
+            "$ref": "#/definitions/ErrorResponse"
+  "/users":
+    get:
+      summary: List All Users
+      description: Retrieve paginated list of users (Admin only)
+      tags:
+      - Users
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: limit
+        in: query
+        description: Number of records per page
+        type: integer
+        default: 10
+      - name: offset
+        in: query
+        description: Offset for pagination
+        type: integer
+        default: 0
+      responses:
+        '200':
+          description: List of users
+          schema:
+            "$ref": "#/definitions/PaginationResponse"
+        '401':
+          description: Unauthorized
+          schema:
+            "$ref": "#/definitions/ErrorResponse"
+        '500':
+          description: Server error
+          schema:
+            "$ref": "#/definitions/ErrorResponse"
+    post:
+      summary: Create New User
+      description: Create a new user with specified role (Admin only)
+      tags:
+      - Users
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          "$ref": "#/definitions/CreateUserRequest"
+      responses:
+        '201':
+          description: User created successfully
+          schema:
+            "$ref": "#/definitions/SuccessResponse"
+        '400':
+          description: Bad request
+          schema:
+            "$ref": "#/definitions/ErrorResponse"
+        '422':
+          description: Validation error
+          schema:
+            "$ref": "#/definitions/ErrorResponse"
+  "/users/{id}":
+    get:
+      summary: Get User by ID
+      description: Retrieve specific user details
+      tags:
+      - Users
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        type: string
+        format: uuid
+      responses:
+        '200':
+          description: User details
+          schema:
+            "$ref": "#/definitions/SuccessResponse"
+        '404':
+          description: User not found
+          schema:
+            "$ref": "#/definitions/ErrorResponse"
+    put:
+      summary: Update User
+      description: Update user information
+      tags:
+      - Users
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        type: string
+        format: uuid
+      - name: body
+        in: body
+        schema:
+          "$ref": "#/definitions/User"
+      responses:
+        '200':
+          description: User updated successfully
+          schema:
+            "$ref": "#/definitions/SuccessResponse"
+        '400':
+          description: Bad request
+          schema:
+            "$ref": "#/definitions/ErrorResponse"
+    delete:
+      summary: Delete User
+      description: Delete a user (Admin only)
+      tags:
+      - Users
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        type: string
+        format: uuid
+      responses:
+        '200':
+          description: User deleted successfully
+          schema:
+            "$ref": "#/definitions/SuccessResponse"
+        '404':
+          description: User not found
+          schema:
+            "$ref": "#/definitions/ErrorResponse"
+  "/achievements":
+    get:
+      summary: List Achievements
+      description: Retrieve paginated list of achievements (filtered by role)
+      tags:
+      - Achievements
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: limit
+        in: query
+        type: integer
+        default: 10
+      - name: offset
+        in: query
+        type: integer
+        default: 0
+      responses:
+        '200':
+          description: List of achievements
+          schema:
+            "$ref": "#/definitions/PaginationResponse"
+        '401':
+          description: Unauthorized
+          schema:
+            "$ref": "#/definitions/ErrorResponse"
+    post:
+      summary: Create Achievement
+      description: Create new achievement (Students only)
+      tags:
+      - Achievements
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          "$ref": "#/definitions/CreateAchievementRequest"
+      responses:
+        '201':
+          description: Achievement created successfully
+          schema:
+            "$ref": "#/definitions/SuccessResponse"
+        '400':
+          description: Bad request
+          schema:
+            "$ref": "#/definitions/ErrorResponse"
+        '403':
+          description: Only students can create achievements
+          schema:
+            "$ref": "#/definitions/ErrorResponse"
+  "/achievements/{id}":
+    get:
+      summary: Get Achievement Detail
+      description: Retrieve specific achievement with all details
+      tags:
+      - Achievements
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        type: string
+        format: uuid
+      responses:
+        '200':
+          description: Achievement details
+          schema:
+            "$ref": "#/definitions/SuccessResponse"
+        '404':
+          description: Achievement not found
+          schema:
+            "$ref": "#/definitions/ErrorResponse"
+    put:
+      summary: Update Achievement
+      description: Update achievement details (Student only, draft status)
+      tags:
+      - Achievements
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        type: string
+        format: uuid
+      - name: body
+        in: body
+        schema:
+          "$ref": "#/definitions/CreateAchievementRequest"
+      responses:
+        '200':
+          description: Achievement updated
+          schema:
+            "$ref": "#/definitions/SuccessResponse"
+        '400':
+          description: Cannot update non-draft achievement
+          schema:
+            "$ref": "#/definitions/ErrorResponse"
+    delete:
+      summary: Delete Achievement
+      description: Delete achievement (Student only, draft status)
+      tags:
+      - Achievements
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        type: string
+        format: uuid
+      responses:
+        '200':
+          description: Achievement deleted
+          schema:
+            "$ref": "#/definitions/SuccessResponse"
+        '403':
+          description: Not authorized
+          schema:
+            "$ref": "#/definitions/ErrorResponse"
+  "/achievements/{id}/submit":
+    post:
+      summary: Submit Achievement for Verification
+      description: Submit draft achievement for advisor verification
+      tags:
+      - Achievements
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        type: string
+        format: uuid
+      responses:
+        '200':
+          description: Achievement submitted for verification
+          schema:
+            "$ref": "#/definitions/SuccessResponse"
+        '400':
+          description: Bad request
+          schema:
+            "$ref": "#/definitions/ErrorResponse"
+  "/achievements/{id}/verify":
+    post:
+      summary: Verify Achievement
+      description: Approve achievement submission (Advisor only)
+      tags:
+      - Achievements
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        type: string
+        format: uuid
+      responses:
+        '200':
+          description: Achievement verified successfully
+          schema:
+            "$ref": "#/definitions/SuccessResponse"
+        '400':
+          description: Cannot verify achievement
+          schema:
+            "$ref": "#/definitions/ErrorResponse"
+  "/achievements/{id}/reject":
+    post:
+      summary: Reject Achievement
+      description: Reject achievement submission with feedback (Advisor only)
+      tags:
+      - Achievements
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        type: string
+        format: uuid
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+          - note
+          properties:
+            note:
+              type: string
+              example: Please provide more details about the competition
+      responses:
+        '200':
+          description: Achievement rejected
+          schema:
+            "$ref": "#/definitions/SuccessResponse"
+        '400':
+          description: Bad request
+          schema:
+            "$ref": "#/definitions/ErrorResponse"
+  "/students":
+    get:
+      summary: List Students
+      description: Retrieve paginated list of students
+      tags:
+      - Students
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: limit
+        in: query
+        type: integer
+        default: 10
+      - name: offset
+        in: query
+        type: integer
+        default: 0
+      responses:
+        '200':
+          description: List of students
+          schema:
+            "$ref": "#/definitions/PaginationResponse"
+  "/students/{id}":
+    get:
+      summary: Get Student Details
+      description: Retrieve specific student information
+      tags:
+      - Students
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        type: string
+        format: uuid
+      responses:
+        '200':
+          description: Student details
+          schema:
+            "$ref": "#/definitions/SuccessResponse"
+        '404':
+          description: Student not found
+          schema:
+            "$ref": "#/definitions/ErrorResponse"
+  "/students/{id}/achievements":
+    get:
+      summary: Get Student Achievements
+      description: Retrieve all achievements for a specific student
+      tags:
+      - Students
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        type: string
+        format: uuid
+      - name: limit
+        in: query
+        type: integer
+        default: 10
+      - name: offset
+        in: query
+        type: integer
+        default: 0
+      responses:
+        '200':
+          description: Student achievements
+          schema:
+            "$ref": "#/definitions/PaginationResponse"
+  "/students/{id}/advisor":
+    put:
+      summary: Set Student Advisor
+      description: Assign advisor to student (Admin only)
+      tags:
+      - Students
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        type: string
+        format: uuid
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+          - advisor_id
+          properties:
+            advisor_id:
+              type: string
+              format: uuid
+      responses:
+        '200':
+          description: Advisor set successfully
+          schema:
+            "$ref": "#/definitions/SuccessResponse"
+        '400':
+          description: Bad request
+          schema:
+            "$ref": "#/definitions/ErrorResponse"
+  "/lecturers":
+    get:
+      summary: List Lecturers
+      description: Retrieve paginated list of lecturers
+      tags:
+      - Lecturers
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: limit
+        in: query
+        type: integer
+        default: 10
+      - name: offset
+        in: query
+        type: integer
+        default: 0
+      responses:
+        '200':
+          description: List of lecturers
+          schema:
+            "$ref": "#/definitions/PaginationResponse"
+  "/lecturers/{id}":
+    get:
+      summary: Get Lecturer Details
+      description: Retrieve specific lecturer information
+      tags:
+      - Lecturers
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        type: string
+        format: uuid
+      responses:
+        '200':
+          description: Lecturer details
+          schema:
+            "$ref": "#/definitions/SuccessResponse"
+        '404':
+          description: Lecturer not found
+          schema:
+            "$ref": "#/definitions/ErrorResponse"
+  "/lecturers/{id}/advisees":
+    get:
+      summary: Get Advisor's Students
+      description: Retrieve all students advised by specific lecturer
+      tags:
+      - Lecturers
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        type: string
+        format: uuid
+      responses:
+        '200':
+          description: List of advisees
+          schema:
+            "$ref": "#/definitions/SuccessResponse"
+  "/reports/statistics":
+    get:
+      summary: Get Achievement Statistics
+      description: Retrieve system-wide achievement statistics
+      tags:
+      - Reports
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Statistics data
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+              message:
+                type: string
+              data:
+                type: object
+                properties:
+                  total_achievements:
+                    type: integer
+                  by_type:
+                    type: object
+                  by_status:
+                    type: object
+  "/reports/student/{id}":
+    get:
+      summary: Get Student Achievement Report
+      description: Retrieve achievement statistics for specific student
+      tags:
+      - Reports
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        type: string
+        format: uuid
+      - name: limit
+        in: query
+        type: integer
+        default: 10
+      - name: offset
+        in: query
+        type: integer
+        default: 0
+      responses:
+        '200':
+          description: Student report
+          schema:
+            "$ref": "#/definitions/SuccessResponse"
+        '404':
+          description: Student not found
+          schema:
+            "$ref": "#/definitions/ErrorResponse"
+tags:
+- name: Authentication
+  description: User authentication and authorization
+- name: Users
+  description: User management (Admin only)
+- name: Achievements
+  description: Achievement management and verification workflow
+- name: Students
+  description: Student information and achievements
+- name: Lecturers
+  description: Lecturer information and advisory management
+- name: Reports
+  description: Statistics and reporting endpoints
+

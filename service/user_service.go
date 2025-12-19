@@ -2,10 +2,9 @@ package service
 
 import (
 	"context"
-	"errors"
 
-	"github.com/airlangga/achievement-reporting/models"
-	"github.com/airlangga/achievement-reporting/repository"
+	"github.com/Aryma-f4/uas-backend/models"
+	"github.com/Aryma-f4/uas-backend/repository"
 	"github.com/google/uuid"
 )
 

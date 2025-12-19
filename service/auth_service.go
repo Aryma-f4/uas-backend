@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/airlangga/achievement-reporting/models"
-	"github.com/airlangga/achievement-reporting/repository"
+	"github.com/Aryma-f4/uas-backend/models"
+	"github.com/Aryma-f4/uas-backend/repository"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -96,5 +96,9 @@ func (s *AuthService) ValidateToken(tokenString string) (uuid.UUID, uuid.UUID, e
 }
 
 func (s *AuthService) HashPassword(password string) (string, error) {
-	return bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+    hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+    if err != nil {
+        return "", err
+    }
+    return string(hashed), nil
 }

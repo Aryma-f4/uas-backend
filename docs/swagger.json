@@ -1,0 +1,456 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Student Achievement Reporting System API",
+    "description": "API untuk Sistem Pelaporan Prestasi Mahasiswa - Universitas Airlangga",
+    "version": "1.0.0",
+    "contact": {
+      "name": "API Support",
+      "email": "support@university.ac.id"
+    }
+  },
+  "host": "localhost:3000",
+  "basePath": "/api/v1",
+  "schemes": ["http", "https"],
+  "securityDefinitions": {
+    "BearerAuth": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header",
+      "description": "Enter 'Bearer {token}'"
+    }
+  },
+  "tags": [
+    { "name": "Auth", "description": "Authentication endpoints" },
+    { "name": "Users", "description": "User management (Admin only)" },
+    { "name": "Achievements", "description": "Achievement management" },
+    { "name": "Students", "description": "Student management" },
+    { "name": "Lecturers", "description": "Lecturer management" },
+    { "name": "Reports", "description": "Reports and statistics" }
+  ],
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "User login",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": { "$ref": "#/definitions/LoginRequest" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Login successful", "schema": { "$ref": "#/definitions/LoginResponse" } },
+          "401": { "description": "Invalid credentials" }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Refresh access token",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": { "$ref": "#/definitions/RefreshTokenRequest" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Token refreshed" },
+          "401": { "description": "Invalid refresh token" }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "User logout",
+        "responses": { "200": { "description": "Logged out successfully" } }
+      }
+    },
+    "/auth/profile": {
+      "get": {
+        "tags": ["Auth"],
+        "summary": "Get current user profile",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Profile data", "schema": { "$ref": "#/definitions/UserInfo" } },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/users": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "List all users (Admin only)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "page", "in": "query", "type": "integer", "default": 1 },
+          { "name": "limit", "in": "query", "type": "integer", "default": 10 }
+        ],
+        "responses": {
+          "200": { "description": "List of users" },
+          "403": { "description": "Forbidden" }
+        }
+      },
+      "post": {
+        "tags": ["Users"],
+        "summary": "Create new user (Admin only)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": { "$ref": "#/definitions/CreateUserRequest" }
+          }
+        ],
+        "responses": {
+          "201": { "description": "User created" },
+          "409": { "description": "User already exists" }
+        }
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Get user by ID",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
+        "responses": {
+          "200": { "description": "User data" },
+          "404": { "description": "User not found" }
+        }
+      },
+      "put": {
+        "tags": ["Users"],
+        "summary": "Update user",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "type": "string" },
+          { "in": "body", "name": "body", "schema": { "$ref": "#/definitions/UpdateUserRequest" } }
+        ],
+        "responses": { "200": { "description": "User updated" } }
+      },
+      "delete": {
+        "tags": ["Users"],
+        "summary": "Delete user",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
+        "responses": { "200": { "description": "User deleted" } }
+      }
+    },
+    "/users/{id}/role": {
+      "put": {
+        "tags": ["Users"],
+        "summary": "Update user role",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "type": "string" },
+          { "in": "body", "name": "body", "schema": { "$ref": "#/definitions/UpdateRoleRequest" } }
+        ],
+        "responses": { "200": { "description": "Role updated" } }
+      }
+    },
+    "/achievements": {
+      "get": {
+        "tags": ["Achievements"],
+        "summary": "List achievements (filtered by role)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "status", "in": "query", "type": "string", "enum": ["draft", "submitted", "verified", "rejected"] },
+          {
+            "name": "type",
+            "in": "query",
+            "type": "string",
+            "enum": ["academic", "competition", "organization", "publication", "certification", "other"]
+          },
+          { "name": "page", "in": "query", "type": "integer" },
+          { "name": "limit", "in": "query", "type": "integer" }
+        ],
+        "responses": { "200": { "description": "List of achievements" } }
+      },
+      "post": {
+        "tags": ["Achievements"],
+        "summary": "Create new achievement (Mahasiswa only)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "schema": { "$ref": "#/definitions/CreateAchievementRequest" }
+          }
+        ],
+        "responses": { "201": { "description": "Achievement created" } }
+      }
+    },
+    "/achievements/{id}": {
+      "get": {
+        "tags": ["Achievements"],
+        "summary": "Get achievement by ID",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
+        "responses": { "200": { "description": "Achievement data" } }
+      },
+      "put": {
+        "tags": ["Achievements"],
+        "summary": "Update achievement (draft/rejected only)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "type": "string" },
+          { "in": "body", "name": "body", "schema": { "$ref": "#/definitions/UpdateAchievementRequest" } }
+        ],
+        "responses": { "200": { "description": "Achievement updated" } }
+      },
+      "delete": {
+        "tags": ["Achievements"],
+        "summary": "Delete achievement (draft only)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
+        "responses": { "200": { "description": "Achievement deleted" } }
+      }
+    },
+    "/achievements/{id}/submit": {
+      "post": {
+        "tags": ["Achievements"],
+        "summary": "Submit achievement for verification",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
+        "responses": { "200": { "description": "Achievement submitted" } }
+      }
+    },
+    "/achievements/{id}/verify": {
+      "post": {
+        "tags": ["Achievements"],
+        "summary": "Verify achievement (Dosen Wali only)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
+        "responses": { "200": { "description": "Achievement verified" } }
+      }
+    },
+    "/achievements/{id}/reject": {
+      "post": {
+        "tags": ["Achievements"],
+        "summary": "Reject achievement (Dosen Wali only)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "type": "string" },
+          { "in": "body", "name": "body", "schema": { "$ref": "#/definitions/RejectAchievementRequest" } }
+        ],
+        "responses": { "200": { "description": "Achievement rejected" } }
+      }
+    },
+    "/achievements/{id}/history": {
+      "get": {
+        "tags": ["Achievements"],
+        "summary": "Get achievement status history",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
+        "responses": { "200": { "description": "Status history" } }
+      }
+    },
+    "/students": {
+      "get": {
+        "tags": ["Students"],
+        "summary": "List all students",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "page", "in": "query", "type": "integer" },
+          { "name": "limit", "in": "query", "type": "integer" }
+        ],
+        "responses": { "200": { "description": "List of students" } }
+      }
+    },
+    "/students/{id}": {
+      "get": {
+        "tags": ["Students"],
+        "summary": "Get student by ID",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
+        "responses": { "200": { "description": "Student data" } }
+      }
+    },
+    "/students/{id}/achievements": {
+      "get": {
+        "tags": ["Students"],
+        "summary": "Get student's achievements",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "type": "string" },
+          { "name": "page", "in": "query", "type": "integer" },
+          { "name": "limit", "in": "query", "type": "integer" }
+        ],
+        "responses": { "200": { "description": "List of achievements" } }
+      }
+    },
+    "/students/{id}/advisor": {
+      "put": {
+        "tags": ["Students"],
+        "summary": "Update student's advisor (Admin only)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "type": "string" },
+          { "in": "body", "name": "body", "schema": { "$ref": "#/definitions/UpdateAdvisorRequest" } }
+        ],
+        "responses": { "200": { "description": "Advisor updated" } }
+      }
+    },
+    "/lecturers": {
+      "get": {
+        "tags": ["Lecturers"],
+        "summary": "List all lecturers",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "page", "in": "query", "type": "integer" },
+          { "name": "limit", "in": "query", "type": "integer" }
+        ],
+        "responses": { "200": { "description": "List of lecturers" } }
+      }
+    },
+    "/lecturers/{id}/advisees": {
+      "get": {
+        "tags": ["Lecturers"],
+        "summary": "Get lecturer's advisees",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "type": "string" },
+          { "name": "page", "in": "query", "type": "integer" },
+          { "name": "limit", "in": "query", "type": "integer" }
+        ],
+        "responses": { "200": { "description": "List of advisees" } }
+      }
+    },
+    "/reports/statistics": {
+      "get": {
+        "tags": ["Reports"],
+        "summary": "Get achievement statistics",
+        "security": [{ "BearerAuth": [] }],
+        "responses": { "200": { "description": "Statistics data" } }
+      }
+    },
+    "/reports/student/{id}": {
+      "get": {
+        "tags": ["Reports"],
+        "summary": "Get student report",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
+        "responses": { "200": { "description": "Student report" } }
+      }
+    }
+  },
+  "definitions": {
+    "LoginRequest": {
+      "type": "object",
+      "required": ["username", "password"],
+      "properties": {
+        "username": { "type": "string", "example": "mahasiswa123" },
+        "password": { "type": "string", "example": "SecurePass123!" }
+      }
+    },
+    "LoginResponse": {
+      "type": "object",
+      "properties": {
+        "status": { "type": "string" },
+        "data": {
+          "type": "object",
+          "properties": {
+            "token": { "type": "string" },
+            "refresh_token": { "type": "string" },
+            "user": { "$ref": "#/definitions/UserInfo" }
+          }
+        }
+      }
+    },
+    "UserInfo": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "username": { "type": "string" },
+        "full_name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string" },
+        "permissions": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "RefreshTokenRequest": {
+      "type": "object",
+      "required": ["refresh_token"],
+      "properties": {
+        "refresh_token": { "type": "string" }
+      }
+    },
+    "CreateUserRequest": {
+      "type": "object",
+      "required": ["username", "email", "password", "full_name", "role_id"],
+      "properties": {
+        "username": { "type": "string" },
+        "email": { "type": "string" },
+        "password": { "type": "string" },
+        "full_name": { "type": "string" },
+        "role_id": { "type": "string", "format": "uuid" },
+        "student_id": { "type": "string" },
+        "lecturer_id": { "type": "string" },
+        "program_study": { "type": "string" },
+        "academic_year": { "type": "string" },
+        "department": { "type": "string" }
+      }
+    },
+    "UpdateUserRequest": {
+      "type": "object",
+      "properties": {
+        "username": { "type": "string" },
+        "email": { "type": "string" },
+        "full_name": { "type": "string" },
+        "is_active": { "type": "boolean" }
+      }
+    },
+    "UpdateRoleRequest": {
+      "type": "object",
+      "required": ["role_id"],
+      "properties": {
+        "role_id": { "type": "string", "format": "uuid" }
+      }
+    },
+    "CreateAchievementRequest": {
+      "type": "object",
+      "required": ["achievement_type", "title"],
+      "properties": {
+        "achievement_type": {
+          "type": "string",
+          "enum": ["academic", "competition", "organization", "publication", "certification", "other"]
+        },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "details": { "type": "object" },
+        "tags": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "UpdateAchievementRequest": {
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "details": { "type": "object" },
+        "tags": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "RejectAchievementRequest": {
+      "type": "object",
+      "required": ["rejection_note"],
+      "properties": {
+        "rejection_note": { "type": "string" }
+      }
+    },
+    "UpdateAdvisorRequest": {
+      "type": "object",
+      "required": ["advisor_id"],
+      "properties": {
+        "advisor_id": { "type": "string", "format": "uuid" }
+      }
+    }
+  }
+}
