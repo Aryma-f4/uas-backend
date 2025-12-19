@@ -29,7 +29,7 @@ func (u *StudentUsecase) List(ctx context.Context, limit, offset int) ([]*entity
 }
 
 func (u *StudentUsecase) UpdateAdvisor(ctx context.Context, studentID, advisorID uuid.UUID) error {
-	// Verify lecturer exists
+	
 	_, err := u.lecturerRepo.GetByID(ctx, advisorID)
 	if err != nil {
 		return err

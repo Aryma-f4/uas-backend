@@ -30,13 +30,13 @@ func NewUserUsecase(
 }
 
 func (u *UserUsecase) CreateUser(ctx context.Context, req *entity.CreateUserRequest) (*entity.User, error) {
-	// Hash password
+	
 	hashedPassword, err := u.authUsecase.HashPassword(req.Password)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create user
+	
 	user := &entity.User{
 		ID:           uuid.New(),
 		Username:     req.Username,
@@ -51,7 +51,7 @@ func (u *UserUsecase) CreateUser(ctx context.Context, req *entity.CreateUserRequ
 		return nil, err
 	}
 
-	// Get role name to determine if we need to create student/lecturer
+	
 	role, err := u.userRepo.GetRoleByName(ctx, "Mahasiswa")
 	if err == nil && role.ID == req.RoleID && req.StudentID != "" {
 		student := &entity.Student{
@@ -62,7 +62,7 @@ func (u *UserUsecase) CreateUser(ctx context.Context, req *entity.CreateUserRequ
 			AcademicYear: req.AcademicYear,
 		}
 		if err := u.studentRepo.Create(ctx, student); err != nil {
-			// Rollback user creation
+			
 			u.userRepo.Delete(ctx, user.ID)
 			return nil, err
 		}

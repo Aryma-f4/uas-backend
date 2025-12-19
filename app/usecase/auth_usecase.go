@@ -26,7 +26,7 @@ func NewAuthUsecase(userRepo *repository.UserRepository, cfg *config.Config) *Au
 }
 
 func (u *AuthUsecase) Login(ctx context.Context, req *entity.LoginRequest) (*entity.LoginResponse, error) {
-	// Try to find user by username or email
+	
 	user, err := u.userRepo.GetByUsername(ctx, req.Username)
 	if err != nil {
 		user, err = u.userRepo.GetByEmail(ctx, req.Username)
@@ -35,23 +35,23 @@ func (u *AuthUsecase) Login(ctx context.Context, req *entity.LoginRequest) (*ent
 		}
 	}
 
-	// Check if user is active
+	
 	if !user.IsActive {
 		return nil, errors.New("user account is inactive")
 	}
 
-	// Verify password
+	
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
 		return nil, errors.New("invalid credentials")
 	}
 
-	// Get user permissions
+	
 	permissions, err := u.userRepo.GetPermissions(ctx, user.RoleID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Generate tokens
+	
 	token, err := u.generateToken(user.ID, user.RoleID)
 	if err != nil {
 		return nil, err
@@ -77,7 +77,7 @@ func (u *AuthUsecase) Login(ctx context.Context, req *entity.LoginRequest) (*ent
 }
 
 func (u *AuthUsecase) RefreshToken(ctx context.Context, refreshToken string) (string, string, error) {
-	// Parse refresh token
+	
 	token, err := jwt.ParseWithClaims(refreshToken, jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(u.config.JWTSecret), nil
 	})
@@ -90,12 +90,12 @@ func (u *AuthUsecase) RefreshToken(ctx context.Context, refreshToken string) (st
 		return "", "", errors.New("invalid refresh token")
 	}
 
-	// Check token type
+	
 	if tokenType, ok := claims["type"].(string); !ok || tokenType != "refresh" {
 		return "", "", errors.New("invalid token type")
 	}
 
-	// Get user
+	
 	userIDStr, ok := claims["user_id"].(string)
 	if !ok {
 		return "", "", errors.New("invalid token claims")
@@ -111,7 +111,7 @@ func (u *AuthUsecase) RefreshToken(ctx context.Context, refreshToken string) (st
 		return "", "", errors.New("user not found")
 	}
 
-	// Generate new tokens
+	
 	newToken, err := u.generateToken(user.ID, user.RoleID)
 	if err != nil {
 		return "", "", err
